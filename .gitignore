@@ -1,0 +1,22 @@
+# Datasets — downloaded automatically on first run, never committed
+data/
+sst/
+
+# Training artifacts
+results/
+*.pt
+*.pth
+checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
