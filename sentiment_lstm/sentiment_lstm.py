@@ -11,10 +11,10 @@ Run:
 
 SST is downloaded automatically into ../data/sst (git-ignored).
 
-Note: this reproduces the coursework's own torchtext-free pipeline. The
-sentence-to-label join below maps `sentence_index` to SST's `phrase ids`; if you
-extend this, double-check that mapping against SST's `dictionary.txt`, since
-sentence indices and phrase ids are not guaranteed identical.
+Note: SST keys its sentiment scores by *phrase id*, not sentence index, so each
+sentence is mapped to its phrase id through `dictionary.txt` (an exact text match)
+before its label is attached. Joining sentence index directly to phrase id would
+scramble the labels.
 """
 
 import copy
@@ -52,13 +52,18 @@ def download_sst(dest: str) -> str:
 
 sst_root = download_sst(DATA_DIR)
 
-# Load the three SST files and merge them.
+# Load the SST files. Sentiment scores are keyed by phrase id, so map each
+# sentence to its phrase id via dictionary.txt (exact text match), then attach
+# the score. Finally join the train/val/test split assignment.
 sentences = pd.read_csv(os.path.join(sst_root, "datasetSentences.txt"), sep="\t")
+dictionary = pd.read_csv(os.path.join(sst_root, "dictionary.txt"), sep="|",
+                         header=None, names=["phrase", "phrase_id"])
 labels = pd.read_csv(os.path.join(sst_root, "sentiment_labels.txt"), sep="|")
 splits = pd.read_csv(os.path.join(sst_root, "datasetSplit.txt"), sep=",")
 
-data = sentences.merge(labels, left_on="sentence_index", right_on="phrase ids")
-data = data.merge(splits, on="sentence_index")
+data = sentences.merge(dictionary, left_on="sentence", right_on="phrase", how="inner")
+data = data.merge(labels, left_on="phrase_id", right_on="phrase ids", how="inner")
+data = data.merge(splits, on="sentence_index", how="inner")
 
 
 # Group fine-grained scores (0-1) into 3 classes.
